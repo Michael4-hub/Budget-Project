@@ -19,6 +19,7 @@ def save_transactions(transactions):
 
 
 def add_transaction(transactions):
+
     while True:
         t_type = input("Тип (Income/Expense): ").strip().capitalize()
         if t_type in ("Income", "Expense"):
@@ -63,18 +64,38 @@ def add_transaction(transactions):
     print("Транзакция добавлена!\n")
 
 
+def view_transactions(transactions):
+    if not transactions:
+        print("No transactions found.\n")
+        return
+
+    sorted_transactions = sorted(
+        transactions,
+        key=lambda t: (t["date"], t["type"], t["category"], t["description"], t["amount"])
+    )
+
+    print(f"{'DATE':<12}{'TYPE':<10}{'CATEGORY':<12}{'DESCRIPTION':<20}{'AMOUNT':>8}")
+    print("-" * 62)
+    for t in sorted_transactions:
+        print(f"{t['date']:<12}{t['type']:<10}{t['category']:<12}{t['description']:<20}{t['amount']:>8.2f}")
+    print()
+
+
 def main():
     transactions = load_transactions()
 
     while True:
         print("===== BudgetBuddy =====")
         print("1. Add transaction")
-        print("2. Exit")
+        print("2. View transactions")
+        print("3. Exit")
         choice = input("Выберите пункт меню: ").strip()
 
         if choice == "1":
             add_transaction(transactions)
         elif choice == "2":
+            view_transactions(transactions)
+        elif choice == "3":
             print("До встречи!")
             break
         else:
@@ -83,3 +104,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+        
