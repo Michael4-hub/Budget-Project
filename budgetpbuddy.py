@@ -81,6 +81,41 @@ def view_transactions(transactions):
     print()
 
 
+def calculate_summary(transactions):
+    if not transactions:
+        print("Total Income: 0.00")
+        print("Total Expenses: 0.00")
+        print("Net Balance: 0.00")
+        print("Largest Income: 0.00")
+        print("Largest Expense: 0.00")
+        print("Total Transactions: 0\n")
+        return
+
+    total_income = 0
+    total_expenses = 0
+    largest_income = 0
+    largest_expense = 0
+
+    for t in transactions:
+        if t["type"] == "Income":
+            total_income += t["amount"]
+            if t["amount"] > largest_income:
+                largest_income = t["amount"]
+        elif t["type"] == "Expense":
+            total_expenses += t["amount"]
+            if t["amount"] > largest_expense:
+                largest_expense = t["amount"]
+
+    net_balance = total_income - total_expenses
+
+    print(f"Total Income: {total_income:.2f}")
+    print(f"Total Expenses: {total_expenses:.2f}")
+    print(f"Net Balance: {net_balance:.2f}")
+    print(f"Largest Income: {largest_income:.2f}")
+    print(f"Largest Expense: {largest_expense:.2f}")
+    print(f"Total Transactions: {len(transactions)}\n")
+
+
 def main():
     transactions = load_transactions()
 
@@ -88,7 +123,8 @@ def main():
         print("===== BudgetBuddy =====")
         print("1. Add transaction")
         print("2. View transactions")
-        print("3. Exit")
+        print("3. View summary")
+        print("4. Exit")
         choice = input("Выберите пункт меню: ").strip()
 
         if choice == "1":
@@ -96,6 +132,8 @@ def main():
         elif choice == "2":
             view_transactions(transactions)
         elif choice == "3":
+            calculate_summary(transactions)
+        elif choice == "4":
             print("До встречи!")
             break
         else:
@@ -104,4 +142,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-        
+                
