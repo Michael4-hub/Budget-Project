@@ -116,6 +116,30 @@ def calculate_summary(transactions):
     print(f"Total Transactions: {len(transactions)}\n")
 
 
+def category_breakdown(transactions):
+    expenses = [t for t in transactions if t["type"] == "Expense"]
+
+    if not expenses:
+        print("No expenses recorded yet.\n")
+        return
+
+    totals_by_category = {}
+    for t in expenses:
+        category = t["category"]
+        if category not in totals_by_category:
+            totals_by_category[category] = 0
+        totals_by_category[category] += t["amount"]
+
+    total_spent = sum(totals_by_category.values())
+
+    sorted_categories = sorted(totals_by_category.items(), key=lambda item: item[1], reverse=True)
+
+    for category, amount in sorted_categories:
+        percentage = (amount / total_spent) * 100
+        print(f"{category:<15}: {amount:.2f} ({percentage:.0f}%)")
+    print()
+
+
 def main():
     transactions = load_transactions()
 
@@ -124,7 +148,8 @@ def main():
         print("1. Add transaction")
         print("2. View transactions")
         print("3. View summary")
-        print("4. Exit")
+        print("4. Category analysis")
+        print("5. Exit")
         choice = input("Выберите пункт меню: ").strip()
 
         if choice == "1":
@@ -134,6 +159,8 @@ def main():
         elif choice == "3":
             calculate_summary(transactions)
         elif choice == "4":
+            category_breakdown(transactions)
+        elif choice == "5":
             print("До встречи!")
             break
         else:
@@ -142,4 +169,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-                
+    
