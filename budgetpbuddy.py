@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import date
+import matplotlib.pyplot as plt
 
 FILENAME = "transactions.json"
 CATEGORIES = ["Food", "Transport", "Bills", "Shopping", "Entertainment", "Other"]
@@ -140,6 +141,55 @@ def category_breakdown(transactions):
     print()
 
 
+def plot_category_spending(transactions):
+    expenses = [t for t in transactions if t["type"] == "Expense"]
+
+    if not expenses:
+        print("No expenses to chart.\n")
+        return
+
+    totals_by_category = {}
+    for t in expenses:
+        category = t["category"]
+        if category not in totals_by_category:
+            totals_by_category[category] = 0
+        totals_by_category[category] += t["amount"]
+
+    sorted_categories = sorted(totals_by_category.items(), key=lambda item: item[1], reverse=True)
+    categories = [c for c, amount in sorted_categories]
+    amounts = [amount for c, amount in sorted_categories]
+
+    plt.figure()
+    plt.bar(categories, amounts)
+    plt.xlabel("Category")
+    plt.ylabel("Amount Spent")
+    plt.title("Spending by Category")
+    plt.savefig("category_spending.png")
+    plt.close()
+    print("Chart saved as category_spending.png\n")
+
+
+def plot_income_vs_expense(transactions):
+    total_income = sum(t["amount"] for t in transactions if t["type"] == "Income")
+    total_expenses = sum(t["amount"] for t in transactions if t["type"] == "Expense")
+
+    plt.figure()
+    plt.bar(["Income", "Expenses"], [total_income, total_expenses])
+    plt.ylabel("Amount")
+    plt.title("Income vs Expenses")
+    plt.savefig("income_vs_expense.png")
+    plt.close()
+    print("Chart saved as income_vs_expense.png\n")
+
+
+def show_charts(transactions):
+    if not transactions:
+        print("No transactions to chart.\n")
+        return
+    plot_category_spending(transactions)
+    plot_income_vs_expense(transactions)
+
+
 def main():
     transactions = load_transactions()
 
@@ -149,7 +199,8 @@ def main():
         print("2. View transactions")
         print("3. View summary")
         print("4. Category analysis")
-        print("5. Exit")
+        print("5. Show charts")
+        print("6. Exit")
         choice = input("Выберите пункт меню: ").strip()
 
         if choice == "1":
@@ -161,6 +212,8 @@ def main():
         elif choice == "4":
             category_breakdown(transactions)
         elif choice == "5":
+            show_charts(transactions)
+        elif choice == "6":
             print("До встречи!")
             break
         else:
