@@ -1,1 +1,302 @@
+import json
+import os
+from datetime import date
+import matplotlib.pyplot as plt
+
+FILENAME = "transactions.json"
+CATEGORIES = ["Food", "Transport", "Bills", "Shopping", "Entertainment", "Other"]
+
+
+def load_transactions():
+    if not os.path.exists(FILENAME):
+        return []
+    with open(FILENAME, "r") as f:
+        return json.load(f)
+
+
+def save_transactions(transactions):
+    with open(FILENAME, "w") as f:
+        json.dump(transactions, f, indent=2)
+
+
+def add_transaction(transactions):
+
+    while True:
+        t_type = input("Тип (Income/Expense): ").strip().capitalize()
+        if t_type in ("Income", "Expense"):
+            break
+        print("Ошибка: введите Income или Expense")
+
+    print("Доступные категории:", ", ".join(CATEGORIES))
+    while True:
+        category = input("Категория: ").strip().capitalize()
+        if category in CATEGORIES:
+            break
+        print("Ошибка: выберите категорию из списка")
+
+    description = input("Описание: ").strip()
+    while description == "":
+        print("Описание не может быть пустым")
+        description = input("Описание: ").strip()
+
+    while True:
+        raw_amount = input("Сумма: ").strip()
+        try:
+            amount = float(raw_amount)
+            if amount <= 0:
+                print("Ошибка: сумма должна быть больше нуля")
+                continue
+            break
+        except ValueError:
+            print("Ошибка: введите корректное число")
+
+    today = str(date.today())
+
+    transaction = {
+        "date": today,
+        "type": t_type,
+        "category": category,
+        "description": description,
+        "amount": amount
+    }
+
+    transactions.append(transaction)
+    save_transactions(transactions)
+    print("Транзакция добавлена!\n")
+
+
+def view_transactions(transactions):
+    if not transactions:
+        print("No transactions found.\n")
+        return
+
+    sorted_transactions = sorted(
+        transactions,
+        key=lambda t: (t["date"], t["type"], t["category"], t["description"], t["amount"])
+    )
+
+    print(f"{'DATE':<12}{'TYPE':<10}{'CATEGORY':<12}{'DESCRIPTION':<20}{'AMOUNT':>8}")
+    print("-" * 62)
+    for t in sorted_transactions:
+        print(f"{t['date']:<12}{t['type']:<10}{t['category']:<12}{t['description']:<20}{t['amount']:>8.2f}")
+    print()
+
+
+def calculate_summary(transactions):
+    if not transactions:
+        print("Total Income: 0.00")
+        print("Total Expenses: 0.00")
+        print("Net Balance: 0.00")
+        print("Largest Income: 0.00")
+        print("Largest Expense: 0.00")
+        print("Total Transactions: 0\n")
+        return
+
+    total_income = 0
+    total_expenses = 0
+    largest_income = 0
+    largest_expense = 0
+
+    for t in transactions:
+        if t["type"] == "Income":
+            total_income += t["amount"]
+            if t["amount"] > largest_income:
+                largest_income = t["amount"]
+        elif t["type"] == "Expense":
+            total_expenses += t["amount"]
+            if t["amount"] > largest_expense:
+                largest_expense = t["amount"]
+
+    net_balance = total_income - total_expenses
+
+    print(f"Total Income: {total_income:.2f}")
+    print(f"Total Expenses: {total_expenses:.2f}")
+    print(f"Net Balance: {net_balance:.2f}")
+    print(f"Largest Income: {largest_income:.2f}")
+    print(f"Largest Expense: {largest_expense:.2f}")
+    print(f"Total Transactions: {len(transactions)}\n")
+
+
+def category_breakdown(transactions):
+    expenses = [t for t in transactions if t["type"] == "Expense"]
+
+    if not expenses:
+        print("No expenses recorded yet.\n")
+        return
+
+    totals_by_category = {}
+    for t in expenses:
+        category = t["category"]
+        if category not in totals_by_category:
+            totals_by_category[category] = 0
+        totals_by_category[category] += t["amount"]
+
+    total_spent = sum(totals_by_category.values())
+
+    sorted_categories = sorted(totals_by_category.items(), key=lambda item: item[1], reverse=True)
+
+    for category, amount in sorted_categories:
+        percentage = (amount / total_spent) * 100
+        print(f"{category:<15}: {amount:.2f} ({percentage:.0f}%)")
+    print()
+
+
+def plot_category_spending(transactions):
+    expenses = [t for t in transactions if t["type"] == "Expense"]
+
+    if not expenses:
+        print("No expenses to chart.\n")
+        return
+
+    totals_by_category = {}
+    for t in expenses:
+        category = t["category"]
+        if category not in totals_by_category:
+            totals_by_category[category] = 0
+        totals_by_category[category] += t["amount"]
+
+    sorted_categories = sorted(totals_by_category.items(), key=lambda item: item[1], reverse=True)
+    categories = [c for c, amount in sorted_categories]
+    amounts = [amount for c, amount in sorted_categories]
+
+    plt.figure()
+    plt.bar(categories, amounts)
+    plt.xlabel("Category")
+    plt.ylabel("Amount Spent")
+    plt.title("Spending by Category")
+    plt.savefig("category_spending.png")
+    plt.close()
+    print("Chart saved as category_spending.png\n")
+
+
+def plot_income_vs_expense(transactions):
+    total_income = sum(t["amount"] for t in transactions if t["type"] == "Income")
+    total_expenses = sum(t["amount"] for t in transactions if t["type"] == "Expense")
+
+    plt.figure()
+    plt.bar(["Income", "Expenses"], [total_income, total_expenses])
+    plt.ylabel("Amount")
+    plt.title("Income vs Expenses")
+    plt.savefig("income_vs_expense.png")
+    plt.close()
+    print("Chart saved as income_vs_expense.png\n")
+
+
+def show_charts(transactions):
+    if not transactions:
+        print("No transactions to chart.\n")
+        return
+    plot_category_spending(transactions)
+    plot_income_vs_expense(transactions)
+
+
+BUDGET_FILENAME = "budget.json"
+
+
+def load_budget():
+    if not os.path.exists(BUDGET_FILENAME):
+        return {"monthly_budget": 0}
+    with open(BUDGET_FILENAME, "r") as f:
+        return json.load(f)
+
+
+def save_budget(budget):
+    with open(BUDGET_FILENAME, "w") as f:
+        json.dump(budget, f, indent=2)
+
+
+def set_budget():
+    while True:
+        raw_amount = input("Введите месячный бюджет: ").strip()
+        try:
+            amount = float(raw_amount)
+            if amount <= 0:
+                print("Ошибка: бюджет должен быть больше нуля")
+                continue
+            break
+        except ValueError:
+            print("Ошибка: введите корректное число")
+
+    budget = {"monthly_budget": amount}
+    save_budget(budget)
+    print(f"Бюджет установлен: {amount:.2f}\n")
+
+
+def check_budget(transactions):
+    budget = load_budget()
+    monthly_budget = budget["monthly_budget"]
+
+    if monthly_budget == 0:
+        print("Бюджет ещё не установлен.\n")
+        return
+
+    current_month = date.today().strftime("%Y-%m")
+    spent_this_month = 0
+    for t in transactions:
+        if t["type"] == "Expense" and t["date"].startswith(current_month):
+            spent_this_month += t["amount"]
+
+    remaining = monthly_budget - spent_this_month
+    percentage_used = (spent_this_month / monthly_budget) * 100
+
+    print(f"Monthly Budget: {monthly_budget:.2f}")
+    print(f"Spent This Month: {spent_this_month:.2f}")
+    print(f"Remaining: {remaining:.2f}")
+    print(f"Percentage Used: {percentage_used:.0f}%")
+
+    if percentage_used >= 100:
+        print("ПРЕДУПРЕЖДЕНИЕ: бюджет превышен!")
+    elif percentage_used >= 80:
+        print("Внимание: использовано 80% бюджета или больше")
+    print()
+
+
+def budget_tracking(transactions):
+    print("1. Установить бюджет")
+    print("2. Проверить бюджет")
+    choice = input("Выберите действие: ").strip()
+
+    if choice == "1":
+        set_budget()
+    elif choice == "2":
+        check_budget(transactions)
+    else:
+        print("Неверный выбор\n")
+
+
+def main():
+    transactions = load_transactions()
+
+    while True:
+        print("===== BudgetBuddy =====")
+        print("1. Add transaction")
+        print("2. View transactions")
+        print("3. View summary")
+        print("4. Category analysis")
+        print("5. Show charts")
+        print("6. Budget tracking")
+        print("7. Exit")
+        choice = input("Выберите пункт меню: ").strip()
+
+        if choice == "1":
+            add_transaction(transactions)
+        elif choice == "2":
+            view_transactions(transactions)
+        elif choice == "3":
+            calculate_summary(transactions)
+        elif choice == "4":
+            category_breakdown(transactions)
+        elif choice == "5":
+            show_charts(transactions)
+        elif choice == "6":
+            budget_tracking(transactions)
+        elif choice == "7":
+            print("До встречи!")
+            break
+        else:
+            print("Неверный выбор, попробуйте снова\n")
+
+
+if __name__ == "__main__":
+    main()
 
