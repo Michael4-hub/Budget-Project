@@ -190,6 +190,93 @@ def show_charts(transactions):
     plot_income_vs_expense(transactions)
 
 
+BUDGET_FILENAME = "budget.json"
+WARNING_THRESHOLD = 80
+EXCEEDED_THRESHOLD = 100
+
+
+def load_budget():
+    if not os.path.exists(BUDGET_FILENAME):
+        return {"monthly_budget": 0}
+    with open(BUDGET_FILENAME, "r") as f:
+        return json.load(f)
+
+
+def save_budget(budget):
+    with open(BUDGET_FILENAME, "w") as f:
+        json.dump(budget, f, indent=2)
+
+
+def set_budget():
+    while True:
+        raw_amount = input("Введите месячный бюджет: ").strip()
+        try:
+            amount = float(raw_amount)
+        except ValueError:
+            print("Ошибка: введите корректное число")
+            continue
+        if amount <= 0:
+            print("Ошибка: бюджет должен быть больше нуля")
+            continue
+        break
+
+    save_budget({"monthly_budget": amount})
+    print(f"Бюджет установлен: {amount:.2f}\n")
+
+
+def get_monthly_expenses(transactions, year_month):
+    total = 0
+    for t in transactions:
+        if t["type"] == "Expense" and t["date"].startswith(year_month):
+            total += t["amount"]
+    return total
+
+
+def check_budget(transactions):
+    budget = load_budget()
+    monthly_budget = budget["monthly_budget"]
+
+    if monthly_budget == 0:
+        print("Бюджет ещё не установлен.\n")
+        return
+
+    current_month = date.today().strftime("%Y-%m")
+    spent_this_month = get_monthly_expenses(transactions, current_month)
+
+    remaining = monthly_budget - spent_this_month
+    percentage_used = (spent_this_month / monthly_budget) * 100
+
+    print(f"Monthly Budget: {monthly_budget:.2f}")
+    print(f"Spent This Month: {spent_this_month:.2f}")
+    print(f"Remaining: {remaining:.2f}")
+    print(f"Percentage Used: {percentage_used:.0f}%")
+
+    if percentage_used >= EXCEEDED_THRESHOLD:
+        print("ПРЕДУПРЕЖДЕНИЕ: бюджет превышен!")
+    elif percentage_used >= WARNING_THRESHOLD:
+        print(f"Внимание: использовано {WARNING_THRESHOLD}% бюджета или больше")
+    print()
+
+
+def budget_tracking(transactions):
+    while True:
+        print("1. Установить бюджет")
+        print("2. Проверить бюджет")
+        print("3. Назад")
+        choice = input("Выберите действие: ").strip()
+
+        if choice == "1":
+            set_budget()
+            break
+        elif choice == "2":
+            check_budget(transactions)
+            break
+        elif choice == "3":
+            break
+        else:
+            print("Неверный выбор, попробуйте снова\n")
+
+
 def main():
     transactions = load_transactions()
 
@@ -200,7 +287,8 @@ def main():
         print("3. View summary")
         print("4. Category analysis")
         print("5. Show charts")
-        print("6. Exit")
+        print("6. Budget tracking")
+        print("7. Exit")
         choice = input("Выберите пункт меню: ").strip()
 
         if choice == "1":
@@ -214,6 +302,8 @@ def main():
         elif choice == "5":
             show_charts(transactions)
         elif choice == "6":
+            budget_tracking(transactions)
+        elif choice == "7":
             print("До встречи!")
             break
         else:
@@ -222,4 +312,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
+        
